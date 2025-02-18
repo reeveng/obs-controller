@@ -4,6 +4,7 @@
 	import { httpMethod } from '$lib/http-methods';
 
 	let isConnected = $state(false);
+	let isRecording = $state(false);
 
 	async function connect() {
 		console.log('hi');
@@ -20,6 +21,39 @@
 		);
 		isConnected = connected;
 	}
+
+	async function startRecording() {
+		const { success, recording } = await fetch(apiUrls.OBS_START_RECORDING, {
+			method: httpMethod.POST
+		}).then((res) => res.json());
+
+		if (success) {
+			isRecording = recording;
+		}
+	}
+
+	async function stopRecording() {
+		const { success, recording } = await fetch(apiUrls.OBS_STOP_RECORDING, {
+			method: httpMethod.POST
+		}).then((res) => res.json());
+
+		if (success) {
+			isRecording = recording;
+		}
+	}
+
+	$effect(() => {
+		const interval = setInterval(async () => {
+			try {
+				const status = await fetch(apiUrls.OBS_RECORDING_STATUS).then((res) => res.json());
+				isRecording = status.recording;
+			} catch (error) {
+				console.error('Status polling error:', error);
+			}
+		}, 5000);
+
+		return () => clearInterval(interval);
+	});
 </script>
 
 <main
@@ -36,5 +70,33 @@
 		<p role="status" aria-live="assertive" aria-atomic="true" class="sr-only">
 			Status: {isConnected ? 'Connected' : 'Disconnected'}
 		</p>
+	</fieldset>
+
+	<fieldset>
+		<legend>Recording Status</legend>
+
+		<Button
+			onclick={startRecording}
+			disabled={isRecording}
+			aria-pressed={isRecording ? 'true' : 'false'}
+			aria-label="Start recording"
+		>
+			Start Recording
+		</Button>
+
+		<Button
+			onclick={stopRecording}
+			disabled={!isRecording}
+			aria-pressed={isRecording ? 'false' : 'true'}
+			aria-label="Stop recording"
+		>
+			Stop Recording
+		</Button>
+
+		<div role="status" aria-live="assertive" aria-atomic="true">
+			<p>
+				Recording: {isRecording ? 'In Progress' : 'Not Recording'}
+			</p>
+		</div>
 	</fieldset>
 </main>
