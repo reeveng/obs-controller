@@ -5,5 +5,7 @@ export const apiUrls = {
 	OBS_STOP_RECORDING: '/api/record/stop',
 	OBS_RECORDING_STATUS: '/api/record/status',
 	OBS_SCENES: '/api/scene/list',
-	OBS_SWITCH_SCENE: '/api/scene/switch'
+	OBS_SWITCH_SCENE: '/api/scene/switch',
+	OBS_STATUS: '/api/obs/status'
 };
+

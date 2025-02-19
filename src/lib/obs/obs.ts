@@ -110,3 +110,13 @@ export async function getCurrentScene() {
 		return handleError(error, 'get current scene');
 	}
 }
+
+export async function getConnectionStatus() {
+	try {
+		const { obsVersion } = await obs.call('GetVersion');
+
+		return { isConnected: Boolean(obsVersion) };
+	} catch {
+		return { isConnected: false };
+	}
+}

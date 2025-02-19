@@ -75,17 +75,23 @@
 		fileDirectory = status.directory;
 	}
 
-	$effect(() => {
-		if (!isConnected) return;
+	async function fetchConnectionStatus() {
+		const status = await fetchWithErrorHandling(apiUrls.OBS_STATUS);
+		isConnected = status.isConnected;
 
+		return status.isConnected;
+	}
+
+	$effect(() => {
 		const interval = setInterval(async () => {
+			const isConnected = await fetchConnectionStatus();
+
 			if (!isConnected) {
-				clearInterval(interval);
 				return;
 			}
 
-			fetchRecordingStatus();
-			fetchScenes();
+			await fetchRecordingStatus();
+			await fetchScenes();
 		}, 500);
 
 		return () => clearInterval(interval);
@@ -149,7 +155,7 @@
 		</div>
 
 		{#if !isConnected}
-			<Button onclick={connect}>Try to connect to OBS</Button>
+			<Button onclick={connect}>Try to connect with OBS</Button>
 		{:else}
 			<!-- <Button onclick={disconnect}>Disconnect from OBS</Button> -->
 		{/if}
