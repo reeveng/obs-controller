@@ -41,4 +41,23 @@ You can preview the production build with `npm run preview`.
 
 - Shouldn't reinvent the wheel, and libraries are allowed
 
-**Don't forget the required environment variables (can be found in .env.example)**
+## Prerequisites
+
+Ensure docker and docker compose work.
+I used pnpm and it's also what docker will use, but it's not a hard requirement.
+You have obs installed, and have web-sockets set up for OBS.
+
+## Start the project
+
+1. Don't forget the required environment variables (can be found in .env.example)
+
+    ```bash
+    cp .env.example .env
+    ```
+
+2. Then build the docker images.
+
+    ```bash
+    docker compose build
+    docker compose up
+    ```
