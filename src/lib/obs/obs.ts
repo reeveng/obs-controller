@@ -1,100 +1,112 @@
 import OBSWebSocket, { type OBSResponseTypes } from 'obs-websocket-js';
+import { OBS_WEB_SOCKET_URL, OBS_WEB_SOCKET_PASSWORD } from '$env/static/private';
 
 const obs = new OBSWebSocket();
 
+function handleError(error: unknown, action: string) {
+	console.error(`Error during ${action}:`, error);
+	return error instanceof Error ? error.message : 'Unknown error';
+}
+
 export async function connect() {
 	try {
-		await obs.connect(
-			import.meta.env.VITE_OBS_WEB_SOCKET_URL ?? 'ws://localhost:4455',
-			import.meta.env.VITE_OBS_WEB_SOCKET_PASSWORD ?? ''
-		);
+		await obs.connect(OBS_WEB_SOCKET_URL ?? 'ws://localhost:4455', OBS_WEB_SOCKET_PASSWORD ?? '');
+
 		return { connected: true };
 	} catch (error) {
-		console.log('error happened while trying to connect', error);
-		return { connected: false };
+		return { connected: false, error: handleError(error, 'connect') };
 	}
 }
 
 export async function disconnect() {
 	try {
 		await obs.disconnect();
+
 		return { connected: false };
 	} catch (error) {
-		console.log('error happened while trying to disconnect', error);
-		return { connected: true, error };
+		return { connected: true, error: handleError(error, 'disconnect') };
 	}
 }
 
 export async function startRecording() {
 	try {
 		await obs.call('StartRecord');
+
 		return { recording: true, success: true };
 	} catch (error) {
-		console.error('Error starting recording:', error);
 		return {
-			recording: false,
+			recording: null,
 			success: false,
-			error: error instanceof Error ? error.message : 'Unknown error'
+			error: handleError(error, 'start recording')
 		};
 	}
 }
 
 export async function stopRecording() {
 	try {
-		await obs.call('StopRecord');
-		return { recording: false, success: true };
+		const { outputPath } = await obs.call('StopRecord');
+
+		return { recording: false, success: true, filePath: outputPath };
 	} catch (error) {
-		console.error('Error stopping recording:', error);
 		return {
-			recording: true,
+			recording: null,
 			success: false,
-			error: error instanceof Error ? error.message : 'Unknown error'
+			error: handleError(error, 'stop recording')
 		};
 	}
 }
 
 export async function getRecordingStatus() {
 	try {
-		const { outputActive } = await obs.call('GetRecordStatus');
-		return { recording: outputActive, success: true };
+		const status = await obs.call('GetRecordStatus');
+		const { recordDirectory } = await obs.call('GetRecordDirectory');
+
+		const { outputActive, outputTimecode } = status;
+
+		return {
+			recording: outputActive,
+			success: true,
+			timecode: outputTimecode,
+			directory: recordDirectory
+		};
 	} catch (error) {
-		console.error('Error getting recording status:', error);
-		return { recording: false, success: false };
+		return { recording: null, success: false, error: handleError(error, 'get recording status') };
 	}
 }
 
 export async function getScenes() {
 	try {
 		const response: OBSResponseTypes['GetSceneList'] = await obs.call('GetSceneList');
-		const scenes = response.scenes.map((scene) => scene.sceneName);
+		const currentScene = await getCurrentScene();
+
+		const scenes = response.scenes.map((scene) => scene.sceneName).sort();
 
 		return {
 			scenes,
-			current: await getCurrentScene(),
+			current: currentScene,
 			success: true
 		};
 	} catch (error) {
-		console.error('Error getting scenes:', error);
-		return { scenes: [], current: '', success: false };
+		return { scenes: [], current: '', success: false, error: handleError(error, 'get scenes') };
 	}
 }
 
 export async function switchScene(sceneName: string) {
 	try {
 		await obs.call('SetCurrentProgramScene', { sceneName });
+
 		return { success: true, currentScene: sceneName };
 	} catch (error) {
-		console.error('Error switching scene:', error);
-		return { success: false, currentScene: '' };
+		return { success: false, currentScene: '', error: handleError(error, 'switch scene') };
 	}
 }
 
 export async function getCurrentScene() {
 	try {
 		const { currentProgramSceneName } = await obs.call('GetCurrentProgramScene');
-		return currentProgramSceneName;
+
+		return currentProgramSceneName ?? '';
 	} catch (error) {
-		console.error('Error getting current scene:', error);
-		return '';
+		return handleError(error, 'get current scene');
 	}
 }

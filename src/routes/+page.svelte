@@ -2,90 +2,91 @@
 	import { apiUrls } from '$lib/api';
 	import { Button } from '$lib/components/ui/button';
 	import * as Select from '$lib/components/ui/select';
+	import { fetchWithErrorHandling } from '$lib/fetch-with-error-handling';
 	import { httpMethod } from '$lib/http-methods';
 	import { scenes } from '$lib/stores/scenes';
 	import { cn } from '$lib/utils';
 
 	let isConnected = $state(false);
 	let isRecording = $state(false);
+	let timecode = $state();
+	let fileLocation = $state();
+	let fileDirectory = $state();
 
 	async function connect() {
-		try {
-			const { connected } = await fetch(apiUrls.OBS_CONNECT, { method: httpMethod.POST }).then(
-				(res) => res.json()
-			);
+		const { connected } = await fetchWithErrorHandling(apiUrls.OBS_CONNECT, {
+			method: httpMethod.POST
+		});
 
-			isConnected = connected;
-		} catch (error) {
-			console.error('Auto-connect failed:', error);
-		}
+		isConnected = connected;
 	}
 
 	async function disconnect() {
-		try {
-			const { connected } = await fetch(apiUrls.OBS_DISCONNECT, { method: httpMethod.POST }).then(
-				(res) => res.json()
-			);
+		const { connected } = await fetchWithErrorHandling(apiUrls.OBS_DISCONNECT, {
+			method: httpMethod.POST
+		});
 
-			isConnected = connected;
-		} catch (error) {
-			console.error('disconnect failed:', error);
-		}
+		isConnected = connected;
 	}
 
 	async function startRecording() {
-		const { success, recording } = await fetch(apiUrls.OBS_START_RECORDING, {
+		const { success, recording } = await fetchWithErrorHandling(apiUrls.OBS_START_RECORDING, {
 			method: httpMethod.POST
-		}).then((res) => res.json());
+		});
 
 		if (success) {
+			fileLocation = undefined;
 			isRecording = recording;
 		}
 	}
 
 	async function stopRecording() {
-		const { success, recording } = await fetch(apiUrls.OBS_STOP_RECORDING, {
-			method: httpMethod.POST
-		}).then((res) => res.json());
+		const { success, recording, filePath } = await fetchWithErrorHandling(
+			apiUrls.OBS_STOP_RECORDING,
+			{
+				method: httpMethod.POST
+			}
+		);
 
 		if (success) {
+			fileLocation = filePath;
 			isRecording = recording;
 		}
 	}
 
 	async function fetchScenes() {
-		const response = await fetch(apiUrls.OBS_SCENES);
-		const { scenes: sceneList, current } = await response.json();
+		const { scenes: sceneList, current } = await fetchWithErrorHandling(apiUrls.OBS_SCENES);
 		$scenes = { scenes: sceneList, current };
 	}
 
 	async function switchScene(sceneName: string) {
-		await fetch(apiUrls.OBS_SWITCH_SCENE, {
+		fetchWithErrorHandling(apiUrls.OBS_SWITCH_SCENE, {
 			method: httpMethod.POST,
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ sceneName })
-		}).then((res) => res.json());
+		});
 	}
 
 	async function fetchRecordingStatus() {
-		try {
-			const status = await fetch(apiUrls.OBS_RECORDING_STATUS).then((res) => res.json());
+		const status = await fetchWithErrorHandling(apiUrls.OBS_RECORDING_STATUS);
 
-			isRecording = status.recording;
-		} catch (error) {
-			console.error('Status polling error:', error);
-		}
+		timecode = status.timecode;
+		isRecording = status.recording;
+		fileDirectory = status.directory;
 	}
 
 	$effect(() => {
+		if (!isConnected) return;
+
 		const interval = setInterval(async () => {
 			if (!isConnected) {
+				clearInterval(interval);
 				return;
 			}
 
 			fetchRecordingStatus();
 			fetchScenes();
-		}, 5000);
+		}, 500);
 
 		return () => clearInterval(interval);
 	});
@@ -102,6 +103,7 @@
 		}
 	});
 
+	// attempt to connect on start of application
 	$effect(() => {
 		connect();
 
@@ -157,13 +159,16 @@
 		<section class="flex flex-col gap-4 rounded-md border p-8">
 			<h2 class="text-lg font-semibold">Recording management</h2>
 
-			<Button onclick={startRecording} disabled={isRecording} aria-label="Start recording">
-				Start Recording
-			</Button>
+			{#if isRecording}
+				<p>Timecode: {timecode}</p>
+				<p>Directory file will be saved to: {fileDirectory}</p>
+			{:else if fileLocation}
+				<p>File saved to: {fileLocation}</p>
+			{/if}
 
-			<Button onclick={stopRecording} disabled={!isRecording} aria-label="Stop recording">
-				Stop Recording
-			</Button>
+			<Button onclick={startRecording} disabled={isRecording}>Start Recording</Button>
+
+			<Button onclick={stopRecording} disabled={!isRecording}>Stop Recording</Button>
 		</section>
 
 		<section class="flex flex-col gap-4 rounded-md border p-8">
