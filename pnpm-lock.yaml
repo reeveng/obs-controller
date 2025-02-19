@@ -52,6 +52,9 @@ devDependencies:
   globals:
     specifier: ^15.14.0
     version: 15.14.0
+  lucide-svelte:
+    specifier: ^0.475.0
+    version: 0.475.0(svelte@5.19.9)
   prettier:
     specifier: ^3.4.2
     version: 3.5.0
@@ -1859,6 +1862,14 @@ packages:
 
   /lodash.merge@4.6.2:
     resolution: {integrity: sha512-0KpjqXRVvrYyCsX1swR/XTK0va6VQkQM6MNo7PqW77ByjAhoARA8EfrP1N4+KlKj8YS0ZUCtRT/YUuhyYDujIQ==}
+    dev: true
+
+  /lucide-svelte@0.475.0(svelte@5.19.9):
+    resolution: {integrity: sha512-N5+hFTPHaZe9HhqJDxxxODfYuOmI6v+JIowzERcea/uxytN/JZlehVTcINBNp8wMo7l6ov1Jf5srrDbkI/WsJg==}
+    peerDependencies:
+      svelte: ^3 || ^4 || ^5.0.0-next.42
+    dependencies:
+      svelte: 5.19.9
     dev: true
 
   /magic-string@0.30.17:
