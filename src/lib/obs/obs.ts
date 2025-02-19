@@ -1,4 +1,4 @@
-import OBSWebSocket from 'obs-websocket-js';
+import OBSWebSocket, { type OBSResponseTypes } from 'obs-websocket-js';
 
 const obs = new OBSWebSocket();
 
@@ -60,5 +60,41 @@ export async function getRecordingStatus() {
 	} catch (error) {
 		console.error('Error getting recording status:', error);
 		return { recording: false, success: false };
+	}
+}
+
+export async function getScenes() {
+	try {
+		const response: OBSResponseTypes['GetSceneList'] = await obs.call('GetSceneList');
+		const scenes = response.scenes.map((scene) => scene.sceneName);
+
+		return {
+			scenes,
+			current: await getCurrentScene(),
+			success: true
+		};
+	} catch (error) {
+		console.error('Error getting scenes:', error);
+		return { scenes: [], current: '', success: false };
+	}
+}
+
+export async function switchScene(sceneName: string) {
+	try {
+		await obs.call('SetCurrentProgramScene', { sceneName });
+		return { success: true, currentScene: sceneName };
+	} catch (error) {
+		console.error('Error switching scene:', error);
+		return { success: false, currentScene: '' };
+	}
+}
+
+export async function getCurrentScene() {
+	try {
+		const { currentProgramSceneName } = await obs.call('GetCurrentProgramScene');
+		return currentProgramSceneName;
+	} catch (error) {
+		console.error('Error getting current scene:', error);
+		return '';
 	}
 }
