@@ -39,6 +39,17 @@ You can preview the production build with `npm run preview`.
 
 # Encuez
 
+A small little "helper" that does nothing that obs can't do 😆.
+Has the following features:
+- start recording
+- stop recording
+- switch scene
+- display the timecode / current recording file name / directory
+- indicates "nicely" when you're live
+- can be build with docker
+- almost realtime updates
+
+
 ## Assumptions
 
 - Shouldn't reinvent the wheel, and libraries are allowed
@@ -63,3 +74,25 @@ You have obs installed, and have web-sockets set up for OBS.
     docker compose build
     docker compose up
     ```
+
+## Screenshots
+
+### When disconnected / when obs is not running
+
+![image](https://github.com/user-attachments/assets/b2a616c5-e65c-481b-8d96-a441b4135514)
+
+### When obs is running and you reconnect
+
+![image](https://github.com/user-attachments/assets/13c8095b-eeb4-406e-86c0-051125d57d63)
+
+### When recording with obs
+
+![image](https://github.com/user-attachments/assets/ab04179c-30c2-4e36-8997-1bce271c33da)
+
+
+### When you stop the recording
+
+![image](https://github.com/user-attachments/assets/c4303909-38da-424a-bded-2efd86b370a4)
+
+
+
